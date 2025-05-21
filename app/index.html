@@ -219,6 +219,14 @@
       return brightness > BRIGHTNESS_THRESHOLD ? COLORS.WHITE : COLORS.BLACK;
     }
 
+    // Set default values when GitHub user is not found
+    function setDefaultValues() {
+      // Set default fallback values
+      firstNameInput.value = "Octocat";
+      surnameInput.value = "";
+      titleInput.value = "GitHub Mascot";
+    }
+
     // Serial port variables
     let port = null;
     let reader = null;
@@ -277,6 +285,10 @@
           setTimeout(() => {
             notification.style.display = 'none';
           }, 3000);
+          
+          // If no user found, set default values
+          setDefaultValues();
+          updateCanvas();
           return;
         }
         
@@ -457,8 +469,12 @@
       ctx.font = '16px "DM Sans", sans-serif';
       ctx.fillText(title, 20, 95);
       
-      // GitHub Handle
-      const githubHandle = githubHandleInput.value || '@username';
+      // GitHub Handle (ensure it has @ prefix)
+      let githubHandle = githubHandleInput.value || 'username';
+      // Add @ symbol if not already present
+      if (!githubHandle.startsWith('@')) {
+        githubHandle = '@' + githubHandle;
+      }
       ctx.font = '16px "DM Sans", sans-serif';
       ctx.fillText(githubHandle, 20, 115);
       
@@ -603,8 +619,14 @@
       
       try {
         // Format data for the Micropython implementation
+        let githubHandle = githubHandleInput.value;
+        // Ensure GitHub handle has @ prefix for consistency
+        if (githubHandle && !githubHandle.startsWith('@')) {
+          githubHandle = '@' + githubHandle;
+        }
+        
         const data = {
-          github: githubHandleInput.value,
+          github: githubHandle,
           first_name: firstNameInput.value,
           surname: surnameInput.value,
           title: titleInput.value
@@ -693,6 +715,31 @@
       }
     }
 
+    // Pre-fill with a GitHub handle (from URL or default to "mona")
+    function loadInitialData() {
+      // Check if there's a login query parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const loginParam = urlParams.get('login');
+      
+      // Set the GitHub handle (from URL parameter or default to "mona")
+      const initialHandle = loginParam || "mona";
+      githubHandleInput.value = initialHandle;
+      
+      // Clear previous values while loading
+      firstNameInput.value = "";
+      surnameInput.value = "";
+      titleInput.value = "";
+      
+      // Update canvas with loading state
+      updateCanvas();
+      
+      // Fetch GitHub info for the handle to populate other fields
+      fetchGitHubUserInfo(initialHandle);
+    }
+    
+    // Listen for URL changes (for when people manually change the query params)
+    window.addEventListener('popstate', loadInitialData);
+    
     // Event listeners
     badgeForm.addEventListener('input', updateCanvas);
     exportPngBtn.addEventListener('click', exportAsPNG);
@@ -708,15 +755,12 @@
       sendPngBtn.disabled = true;
       serialStatus.textContent = 'Web Serial API not supported in this browser';
     }
-
-    // Pre-fill with Martin's data as shown in the example
-    githubHandleInput.value = "martinwoodward";
-    firstNameInput.value = "Martin";
-    surnameInput.value = "Woodward";
-    titleInput.value = "VP of Developer Relations";
     
     // Initialize the application
     initCanvas();
+    
+    // Load initial data based on GitHub handle (from URL or default)
+    loadInitialData();
   </script>
 </body>
 </html>
