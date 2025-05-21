@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Badger Bodger</title>
+  <link href="https://unpkg.com/@primer/css@^20.0.0/dist/primer.css" rel="stylesheet">
+  <style>
+    :root {
+      --badge-width: 296px;
+      --badge-height: 128px;
+      --color-badge-bg: #ffffff;
+      --color-badge-text: #000000;
+      --color-primary: #0366d6;
+      --color-secondary: #6a737d;
+    }
+
+    .badge-preview {
+      width: var(--badge-width);
+      height: var(--badge-height);
+      margin: 0 auto;
+      border: 1px solid var(--color-secondary);
+    }
+
+    .badge-preview__container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .badge-form {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .badge-form__field {
+      margin-bottom: 1rem;
+    }
+
+    .badge-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+
+    .badge-actions__btn {
+      min-width: 120px;
+    }
+
+    .badge-serial__status {
+      text-align: center;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    .badge-serial__connected {
+      color: green;
+    }
+
+    .badge-serial__disconnected {
+      color: red;
+    }
+
+    @media (max-width: 500px) {
+      .badge-actions {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .badge-actions__btn {
+        width: 100%;
+        max-width: 200px;
+      }
+    }
+  </style>
+</head>
+<body class="p-4">
+  <div class="container-lg">
+    <header class="mb-4">
+      <h1 class="h1 text-center">Badger Bodger</h1>
+      <p class="text-center text-gray">Create and customize your RP2350 Badger</p>
+    </header>
+
+    <main>
+      <div class="badge-preview__container">
+        <h2 class="h3 mb-2">Badge Preview</h2>
+        <canvas id="badgeCanvas" class="badge-preview" width="296" height="128"></canvas>
+      </div>
+
+      <div class="badge-form">
+        <h2 class="h3 mb-3">Badge Information</h2>
+        <form id="badgeForm">
+          <div class="badge-form__field">
+            <label for="githubHandle" class="d-block mb-1">GitHub Handle</label>
+            <input type="text" id="githubHandle" name="githubHandle" class="form-control" placeholder="@username" required>
+          </div>
+          <div class="badge-form__field">
+            <label for="firstName" class="d-block mb-1">First Name</label>
+            <input type="text" id="firstName" name="firstName" class="form-control" placeholder="First Name" required>
+          </div>
+          <div class="badge-form__field">
+            <label for="surname" class="d-block mb-1">Surname</label>
+            <input type="text" id="surname" name="surname" class="form-control" placeholder="Surname" required>
+          </div>
+          <div class="badge-form__field">
+            <label for="title" class="d-block mb-1">Title</label>
+            <input type="text" id="title" name="title" class="form-control" placeholder="Your Title" required>
+          </div>
+
+          <div class="badge-actions">
+            <button type="button" id="exportPngBtn" class="btn btn-primary badge-actions__btn">Export PNG</button>
+            <button type="button" id="connectSerialBtn" class="btn btn-outline-primary badge-actions__btn">Connect Badge</button>
+          </div>
+        </form>
+
+        <div id="serialStatus" class="badge-serial__status badge-serial__disconnected">
+          Not connected to badge
+        </div>
+      </div>
+    </main>
+
+    <footer class="mt-5 pt-3 border-top text-center text-gray">
+      <p>Badger Bodger &copy; 2025 | <a href="https://github.com/your-username/badger-bodger" target="_blank">View on GitHub</a></p>
+    </footer>
+  </div>
+
+  <script>
+    // Canvas and form elements
+    const badgeCanvas = document.getElementById('badgeCanvas');
+    const ctx = badgeCanvas.getContext('2d');
+    const badgeForm = document.getElementById('badgeForm');
+    const githubHandleInput = document.getElementById('githubHandle');
+    const firstNameInput = document.getElementById('firstName');
+    const surnameInput = document.getElementById('surname');
+    const titleInput = document.getElementById('title');
+    const exportPngBtn = document.getElementById('exportPngBtn');
+    const connectSerialBtn = document.getElementById('connectSerialBtn');
+    const serialStatus = document.getElementById('serialStatus');
+
+    // Serial port variables
+    let port = null;
+    let reader = null;
+    let writer = null;
+    let readLoopRunning = false;
+
+    // Initialize canvas with default state
+    function initCanvas() {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, badgeCanvas.width, badgeCanvas.height);
+      updateCanvas();
+    }
+
+    // Update canvas with current form data
+    function updateCanvas() {
+      // Clear canvas
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, badgeCanvas.width, badgeCanvas.height);
+      
+      // Set text properties
+      ctx.fillStyle = 'black';
+      ctx.textAlign = 'center';
+      
+      // GitHub Handle
+      const githubHandle = githubHandleInput.value || '@username';
+      ctx.font = '14px Arial';
+      ctx.fillText(githubHandle, badgeCanvas.width / 2, 30);
+      
+      // Name (First + Surname)
+      const firstName = firstNameInput.value || 'First';
+      const surname = surnameInput.value || 'Last';
+      const fullName = `${firstName} ${surname}`;
+      ctx.font = '18px Arial';
+      ctx.fillText(fullName, badgeCanvas.width / 2, 60);
+      
+      // Title
+      const title = titleInput.value || 'Title';
+      ctx.font = '16px Arial';
+      ctx.fillText(title, badgeCanvas.width / 2, 90);
+    }
+
+    // Export canvas as PNG
+    function exportAsPNG() {
+      const link = document.createElement('a');
+      link.download = 'badge.png';
+      link.href = badgeCanvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // Connect to badge via Web Serial API
+    async function connectToBadge() {
+      if (port) {
+        await disconnectFromBadge();
+        return;
+      }
+
+      try {
+        // Request a port and open a connection
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+
+        // Set up reader and writer
+        const textEncoder = new TextEncoder();
+        const textDecoder = new TextDecoder();
+        writer = port.writable.getWriter();
+        reader = port.readable.getReader();
+
+        // Update UI
+        serialStatus.textContent = 'Connected to badge';
+        serialStatus.classList.remove('badge-serial__disconnected');
+        serialStatus.classList.add('badge-serial__connected');
+        connectSerialBtn.textContent = 'Disconnect Badge';
+        connectSerialBtn.classList.remove('btn-outline-primary');
+        connectSerialBtn.classList.add('btn-outline-danger');
+
+        // Start read loop for receiving data from badge
+        readLoopRunning = true;
+        readFromBadge();
+
+        // Send current badge data to device
+        sendBadgeData();
+      } catch (error) {
+        console.error('Error connecting to badge:', error);
+        serialStatus.textContent = `Connection error: ${error.message}`;
+      }
+    }
+
+    // Disconnect from badge
+    async function disconnectFromBadge() {
+      if (!port) return;
+      
+      readLoopRunning = false;
+      
+      try {
+        // Close the reader and writer
+        if (reader) {
+          await reader.cancel();
+          reader.releaseLock();
+          reader = null;
+        }
+        
+        if (writer) {
+          await writer.close();
+          writer.releaseLock();
+          writer = null;
+        }
+        
+        // Close the port
+        await port.close();
+        port = null;
+        
+        // Update UI
+        serialStatus.textContent = 'Disconnected from badge';
+        serialStatus.classList.remove('badge-serial__connected');
+        serialStatus.classList.add('badge-serial__disconnected');
+        connectSerialBtn.textContent = 'Connect Badge';
+        connectSerialBtn.classList.remove('btn-outline-danger');
+        connectSerialBtn.classList.add('btn-outline-primary');
+      } catch (error) {
+        console.error('Error disconnecting from badge:', error);
+      }
+    }
+
+    // Read data from badge
+    async function readFromBadge() {
+      while (port && readLoopRunning) {
+        try {
+          const { value, done } = await reader.read();
+          if (done) {
+            // Reader has been canceled
+            break;
+          }
+          // Process incoming data (if needed)
+          console.log('Received from badge:', value);
+        } catch (error) {
+          console.error('Error reading from badge:', error);
+          break;
+        }
+      }
+    }
+
+    // Send badge data to device
+    async function sendBadgeData() {
+      if (!writer) return;
+      
+      try {
+        // Format data for the Micropython implementation
+        const data = {
+          github: githubHandleInput.value,
+          first_name: firstNameInput.value,
+          surname: surnameInput.value,
+          title: titleInput.value
+        };
+        
+        // Convert to JSON string
+        const jsonData = JSON.stringify(data);
+        
+        // Send command to badge
+        const encoder = new TextEncoder();
+        await writer.write(encoder.encode(jsonData + '\n'));
+        
+        serialStatus.textContent = 'Data sent to badge';
+      } catch (error) {
+        console.error('Error sending data to badge:', error);
+        serialStatus.textContent = `Send error: ${error.message}`;
+      }
+    }
+
+    // Event listeners
+    badgeForm.addEventListener('input', updateCanvas);
+    exportPngBtn.addEventListener('click', exportAsPNG);
+    connectSerialBtn.addEventListener('click', connectToBadge);
+
+    // Check if Web Serial API is supported
+    if (!navigator.serial) {
+      connectSerialBtn.disabled = true;
+      serialStatus.textContent = 'Web Serial API not supported in this browser';
+    }
+
+    // Initialize the application
+    initCanvas();
+  </script>
+</body>
+</html>
