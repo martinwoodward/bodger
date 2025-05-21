@@ -5,33 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Badger Bodger</title>
   <link href="https://unpkg.com/@primer/css@^20.0.0/dist/primer.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700&display=swap" rel="stylesheet">
   <style>
     :root {
       --badge-width: 296px;
       --badge-height: 128px;
-      --color-badge-bg: #ffffff;
+      --color-badge-bg: #f0f0f0;
       --color-badge-text: #000000;
       --color-primary: #0366d6;
       --color-secondary: #6a737d;
     }
 
+    .layout-container {
+      display: flex;
+      flex-direction: row;
+      gap: 2rem;
+      margin: 0 auto;
+      max-width: 1000px;
+    }
+
     .badge-preview {
       width: var(--badge-width);
       height: var(--badge-height);
-      margin: 0 auto;
-      border: 1px solid var(--color-secondary);
+      border: 3px solid #333;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
     .badge-preview__container {
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-bottom: 2rem;
     }
 
     .badge-form {
       max-width: 500px;
-      margin: 0 auto;
+      flex: 1;
     }
 
     .badge-form__field {
@@ -41,16 +50,18 @@
     .badge-actions {
       display: flex;
       gap: 1rem;
-      justify-content: center;
+      justify-content: flex-start;
       margin-top: 2rem;
+      flex-wrap: wrap;
     }
 
     .badge-actions__btn {
       min-width: 120px;
+      margin-bottom: 0.5rem;
     }
 
     .badge-serial__status {
-      text-align: center;
+      text-align: left;
       margin-top: 1rem;
       font-weight: bold;
     }
@@ -61,6 +72,25 @@
 
     .badge-serial__disconnected {
       color: red;
+    }
+
+    @media (max-width: 768px) {
+      .layout-container {
+        flex-direction: column;
+      }
+
+      .badge-preview__container {
+        margin-top: 2rem;
+        order: -1;
+      }
+
+      .badge-actions {
+        justify-content: center;
+      }
+
+      .badge-serial__status {
+        text-align: center;
+      }
     }
 
     @media (max-width: 500px) {
@@ -84,39 +114,42 @@
     </header>
 
     <main>
-      <div class="badge-preview__container">
-        <h2 class="h3 mb-2">Badge Preview</h2>
-        <canvas id="badgeCanvas" class="badge-preview" width="296" height="128"></canvas>
-      </div>
+      <div class="layout-container">
+        <div class="badge-form">
+          <h2 class="h3 mb-3">Badge Information</h2>
+          <form id="badgeForm">
+            <div class="badge-form__field">
+              <label for="githubHandle" class="d-block mb-1">GitHub Handle</label>
+              <input type="text" id="githubHandle" name="githubHandle" class="form-control" placeholder="@username" required>
+            </div>
+            <div class="badge-form__field">
+              <label for="firstName" class="d-block mb-1">First Name</label>
+              <input type="text" id="firstName" name="firstName" class="form-control" placeholder="First Name" required>
+            </div>
+            <div class="badge-form__field">
+              <label for="surname" class="d-block mb-1">Surname</label>
+              <input type="text" id="surname" name="surname" class="form-control" placeholder="Surname" required>
+            </div>
+            <div class="badge-form__field">
+              <label for="title" class="d-block mb-1">Title</label>
+              <input type="text" id="title" name="title" class="form-control" placeholder="Your Title" required>
+            </div>
 
-      <div class="badge-form">
-        <h2 class="h3 mb-3">Badge Information</h2>
-        <form id="badgeForm">
-          <div class="badge-form__field">
-            <label for="githubHandle" class="d-block mb-1">GitHub Handle</label>
-            <input type="text" id="githubHandle" name="githubHandle" class="form-control" placeholder="@username" required>
-          </div>
-          <div class="badge-form__field">
-            <label for="firstName" class="d-block mb-1">First Name</label>
-            <input type="text" id="firstName" name="firstName" class="form-control" placeholder="First Name" required>
-          </div>
-          <div class="badge-form__field">
-            <label for="surname" class="d-block mb-1">Surname</label>
-            <input type="text" id="surname" name="surname" class="form-control" placeholder="Surname" required>
-          </div>
-          <div class="badge-form__field">
-            <label for="title" class="d-block mb-1">Title</label>
-            <input type="text" id="title" name="title" class="form-control" placeholder="Your Title" required>
-          </div>
+            <div class="badge-actions">
+              <button type="button" id="exportPngBtn" class="btn btn-primary badge-actions__btn">Export PNG</button>
+              <button type="button" id="connectSerialBtn" class="btn btn-outline-primary badge-actions__btn">Connect Badge</button>
+              <button type="button" id="sendPngBtn" class="btn btn-outline-success badge-actions__btn">Send to Badge</button>
+            </div>
+          </form>
 
-          <div class="badge-actions">
-            <button type="button" id="exportPngBtn" class="btn btn-primary badge-actions__btn">Export PNG</button>
-            <button type="button" id="connectSerialBtn" class="btn btn-outline-primary badge-actions__btn">Connect Badge</button>
+          <div id="serialStatus" class="badge-serial__status badge-serial__disconnected">
+            Not connected to badge
           </div>
-        </form>
+        </div>
 
-        <div id="serialStatus" class="badge-serial__status badge-serial__disconnected">
-          Not connected to badge
+        <div class="badge-preview__container">
+          <h2 class="h3 mb-2">Badge Preview</h2>
+          <canvas id="badgeCanvas" class="badge-preview" width="296" height="128"></canvas>
         </div>
       </div>
     </main>
@@ -137,6 +170,7 @@
     const titleInput = document.getElementById('title');
     const exportPngBtn = document.getElementById('exportPngBtn');
     const connectSerialBtn = document.getElementById('connectSerialBtn');
+    const sendPngBtn = document.getElementById('sendPngBtn');
     const serialStatus = document.getElementById('serialStatus');
 
     // Serial port variables
@@ -144,40 +178,242 @@
     let reader = null;
     let writer = null;
     let readLoopRunning = false;
+    
+    // Debounce timer for GitHub API requests
+    let githubDebounceTimer = null;
+
+    // Debounce function to prevent too many API calls
+    function debounce(func, delay) {
+      return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(githubDebounceTimer);
+        githubDebounceTimer = setTimeout(() => {
+          func.apply(context, args);
+        }, delay);
+      };
+    }
+    
+    // Fetch GitHub user info
+    async function fetchGitHubUserInfo(username) {
+      // Clean up username (remove @ if present)
+      if (!username) return;
+      
+      const cleanUsername = username.startsWith('@') ? username.substring(1) : username;
+      if (cleanUsername.trim() === '') return;
+      
+      try {
+        // Show loading state
+        let notification = document.getElementById('nameUpdateNotification');
+        if (!notification) {
+          notification = document.createElement('div');
+          notification.id = 'nameUpdateNotification';
+          notification.className = 'flash';
+          notification.style.position = 'fixed';
+          notification.style.bottom = '20px';
+          notification.style.right = '20px';
+          notification.style.zIndex = '1000';
+          notification.style.padding = '12px 16px';
+          notification.style.borderRadius = '6px';
+          notification.style.maxWidth = '300px';
+          document.body.appendChild(notification);
+        }
+        notification.className = 'flash flash-warn';
+        notification.textContent = `Fetching data for ${cleanUsername}...`;
+        notification.style.display = 'block';
+        
+        const response = await fetch(`https://api.github.com/users/${cleanUsername}`);
+        
+        if (!response.ok) {
+          console.log(`GitHub user not found: ${cleanUsername}`);
+          notification.className = 'flash flash-error';
+          notification.textContent = `User ${cleanUsername} not found on GitHub`;
+          setTimeout(() => {
+            notification.style.display = 'none';
+          }, 3000);
+          return;
+        }
+        
+        const data = await response.json();
+        
+        // Create a notification function for updates
+        const notifyUpdate = (message, isSuccess = true) => {
+          // Update notification message and make it visible
+          notification.className = isSuccess ? 'flash flash-success' : 'flash flash-error';
+          notification.textContent = message;
+          notification.style.display = 'block';
+          
+          // Hide notification after 3 seconds
+          setTimeout(() => {
+            notification.style.display = 'none';
+          }, 3000);
+        };
+        
+        let updatesApplied = false;
+        let updateMessage = [];
+        
+        // Check if name is available and attempt to split into first/last name
+        if (data.name) {
+          const nameParts = data.name.split(' ');
+          
+          if (nameParts.length >= 2) {
+            // First name is first part, last name is everything else
+            const firstName = nameParts[0];
+            const lastName = nameParts.slice(1).join(' ');
+            
+            // Always update when GitHub handle changes
+            firstNameInput.value = firstName;
+            surnameInput.value = lastName;
+            updatesApplied = true;
+            updateMessage.push(`Name: ${firstName} ${lastName}`);
+          } else if (nameParts.length === 1) {
+            // Only one name provided, set as first name
+            firstNameInput.value = nameParts[0];
+            // Clear surname if previously set
+            surnameInput.value = '';
+            updatesApplied = true;
+            updateMessage.push(`First name: ${nameParts[0]}`);
+          }
+        } else {
+          // If no name available in profile, clear the fields
+          firstNameInput.value = '';
+          surnameInput.value = '';
+        }
+        
+        // Check if bio is available and extract first sentence as job title
+        if (data.bio) {
+          // Extract first sentence (ending with period, exclamation mark, or question mark)
+          const bioText = data.bio.trim();
+          let firstSentence = '';
+          
+          const sentenceEnd = bioText.search(/[.!?]/);
+          if (sentenceEnd !== -1) {
+            firstSentence = bioText.substring(0, sentenceEnd + 1).trim();
+          } else if (bioText.length <= 60) {
+            // If no sentence ending found and bio is short, use whole bio
+            firstSentence = bioText;
+          } else {
+            // If no sentence ending found and bio is long, use first 60 chars
+            firstSentence = bioText.substring(0, 60).trim() + '...';
+          }
+          
+          // Clean up the sentence for a job title (remove pronouns, etc.)
+          const jobTitle = firstSentence
+            .replace(/^I am (an?|the) /i, '')
+            .replace(/^I'm (an?|the) /i, '')
+            .replace(/^(I|me|my|mine|we|our) /i, '')
+            .replace(/\.$/, '')
+            .trim();
+          
+          if (jobTitle) {
+            titleInput.value = jobTitle;
+            updatesApplied = true;
+            updateMessage.push(`Title: ${jobTitle}`);
+          }
+        } else {
+          // If no bio available, clear the title field
+          titleInput.value = '';
+        }
+        
+        // Update canvas and show notification if changes were made
+        if (updatesApplied) {
+          updateCanvas();
+          notifyUpdate(`Updated ${updateMessage.join(', ')}`);
+        } else {
+          notifyUpdate(`No profile data available for ${cleanUsername}`, false);
+        }
+      } catch (error) {
+        console.error('Error fetching GitHub user data:', error);
+        let notification = document.getElementById('nameUpdateNotification');
+        if (notification) {
+          notification.className = 'flash flash-error';
+          notification.textContent = `Error fetching data: ${error.message}`;
+          notification.style.display = 'block';
+          setTimeout(() => {
+            notification.style.display = 'none';
+          }, 3000);
+        }
+      }
+    }
+    
+    // Debounced version of the fetch function
+    const debouncedFetchGitHubUserInfo = debounce(fetchGitHubUserInfo, 100);
 
     // Initialize canvas with default state
     function initCanvas() {
-      ctx.fillStyle = 'white';
+      ctx.fillStyle = '#f0f0f0'; // E-paper gray background
       ctx.fillRect(0, 0, badgeCanvas.width, badgeCanvas.height);
       updateCanvas();
     }
 
     // Update canvas with current form data
     function updateCanvas() {
-      // Clear canvas
-      ctx.fillStyle = 'white';
+      // Clear canvas with light gray background similar to e-paper
+      ctx.fillStyle = '#f0f0f0';
       ctx.fillRect(0, 0, badgeCanvas.width, badgeCanvas.height);
+      
+      // Draw border around the badge (simulating the device frame)
+      ctx.strokeStyle = '#c0c0c0';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(6, 6, badgeCanvas.width - 12, badgeCanvas.height - 12);
       
       // Set text properties
       ctx.fillStyle = 'black';
-      ctx.textAlign = 'center';
+      ctx.textAlign = 'left';
       
-      // GitHub Handle
-      const githubHandle = githubHandleInput.value || '@username';
-      ctx.font = '14px Arial';
-      ctx.fillText(githubHandle, badgeCanvas.width / 2, 30);
-      
-      // Name (First + Surname)
+      // First Name - large and bold
       const firstName = firstNameInput.value || 'First';
+      ctx.font = 'bold 24px "DM Sans", sans-serif';
+      ctx.fillText(firstName, 20, 35);
+      
+      // Last Name - large and bold
       const surname = surnameInput.value || 'Last';
-      const fullName = `${firstName} ${surname}`;
-      ctx.font = '18px Arial';
-      ctx.fillText(fullName, badgeCanvas.width / 2, 60);
+      ctx.font = 'bold 24px "DM Sans", sans-serif';
+      ctx.fillText(surname, 20, 65);
+      
+      // Draw horizontal line
+      ctx.beginPath();
+      ctx.moveTo(20, 75);
+      ctx.lineTo(badgeCanvas.width - 20, 75);
+      ctx.stroke();
       
       // Title
       const title = titleInput.value || 'Title';
-      ctx.font = '16px Arial';
-      ctx.fillText(title, badgeCanvas.width / 2, 90);
+      ctx.font = '16px "DM Sans", sans-serif';
+      ctx.fillText(title, 20, 95);
+      
+      // GitHub Handle
+      const githubHandle = githubHandleInput.value || '@username';
+      ctx.font = '16px "DM Sans", sans-serif';
+      ctx.fillText(githubHandle, 20, 115);
+      
+      // Draw circuit lines on right side (decorative element)
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 1;
+      
+      // Top circuit line
+      ctx.beginPath();
+      ctx.moveTo(badgeCanvas.width - 20, 20);
+      ctx.lineTo(badgeCanvas.width - 40, 20);
+      ctx.lineTo(badgeCanvas.width - 40, 40);
+      ctx.stroke();
+      
+      // Circle at end of top line
+      ctx.beginPath();
+      ctx.arc(badgeCanvas.width - 40, 40, 3, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Bottom circuit line
+      ctx.beginPath();
+      ctx.moveTo(badgeCanvas.width - 20, 35);
+      ctx.lineTo(badgeCanvas.width - 50, 35);
+      ctx.lineTo(badgeCanvas.width - 50, 60);
+      ctx.stroke();
+      
+      // Circle at end of bottom line
+      ctx.beginPath();
+      ctx.arc(badgeCanvas.width - 50, 60, 3, 0, Math.PI * 2);
+      ctx.stroke();
     }
 
     // Export canvas as PNG
@@ -307,17 +543,94 @@
       }
     }
 
+    // Send PNG data to the badge over serial
+    async function sendPngToBadge() {
+      if (!writer) {
+        alert('Please connect to badge first');
+        return;
+      }
+
+      try {
+        serialStatus.textContent = 'Sending PNG to badge...';
+        
+        // Get the PNG data from the canvas
+        const pngDataUrl = badgeCanvas.toDataURL('image/png');
+        const response = await fetch(pngDataUrl);
+        const blob = await response.blob();
+        const arrayBuffer = await blob.arrayBuffer();
+        const pngData = new Uint8Array(arrayBuffer);
+        
+        // Encode the PNG data for REPL
+        const encoder = new TextEncoder();
+        
+        // Send commands to create and write the badge.png file
+        await writer.write(encoder.encode("f = open('badge.png', 'wb')\r\n"));
+        
+        // Send the binary data in chunks to avoid overflowing the buffer
+        const CHUNK_SIZE = 256; // Send 256 bytes at a time
+        
+        for (let offset = 0; offset < pngData.length; offset += CHUNK_SIZE) {
+          const chunk = pngData.slice(offset, offset + CHUNK_SIZE);
+          
+          // Convert chunk to a string representation that Python can parse
+          let byteString = 'f.write(b"';
+          for (const byte of chunk) {
+            byteString += '\\x' + byte.toString(16).padStart(2, '0');
+          }
+          byteString += '")\r\n';
+          
+          // Send the chunk
+          await writer.write(encoder.encode(byteString));
+          
+          // Show progress
+          const progress = Math.min(100, Math.round((offset + CHUNK_SIZE) / pngData.length * 100));
+          serialStatus.textContent = `Sending PNG: ${progress}%`;
+          
+          // Small delay to allow the buffer to clear
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Close the file and run the badge display code
+        await writer.write(encoder.encode("f.close()\r\n"));
+        await writer.write(encoder.encode("import badger2040\r\n"));
+        await writer.write(encoder.encode("import pngdec\r\n"));
+        await writer.write(encoder.encode("display = badger2040.Badger2040()\r\n"));
+        await writer.write(encoder.encode("png = pngdec.PNG(display.display)\r\n"));
+        await writer.write(encoder.encode("display.led(128)\r\n"));
+        await writer.write(encoder.encode("display.clear()\r\n"));
+        await writer.write(encoder.encode("png.open_file('badge.png')\r\n"));
+        await writer.write(encoder.encode("png.decode()\r\n"));
+        await writer.write(encoder.encode("display.update()\r\n"));
+        
+        serialStatus.textContent = 'PNG uploaded to badge successfully';
+      } catch (error) {
+        console.error('Error sending PNG to badge:', error);
+        serialStatus.textContent = `PNG upload error: ${error.message}`;
+      }
+    }
+
     // Event listeners
     badgeForm.addEventListener('input', updateCanvas);
     exportPngBtn.addEventListener('click', exportAsPNG);
     connectSerialBtn.addEventListener('click', connectToBadge);
+    sendPngBtn.addEventListener('click', sendPngToBadge);
+    githubHandleInput.addEventListener('blur', function() {
+      fetchGitHubUserInfo(this.value);
+    });
 
     // Check if Web Serial API is supported
     if (!navigator.serial) {
       connectSerialBtn.disabled = true;
+      sendPngBtn.disabled = true;
       serialStatus.textContent = 'Web Serial API not supported in this browser';
     }
 
+    // Pre-fill with Martin's data as shown in the example
+    githubHandleInput.value = "martinwoodward";
+    firstNameInput.value = "Martin";
+    surnameInput.value = "Woodward";
+    titleInput.value = "VP of Developer Relations";
+    
     // Initialize the application
     initCanvas();
   </script>
